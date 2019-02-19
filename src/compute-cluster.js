@@ -3,6 +3,11 @@ var d3 = require("d3");
 
 var helpers = require("./helpers.js");
 
+function is_edge_injected (e) {
+  //console.log (e, "edge_type" in e);
+  return "edge_type" in e;
+}
+
 function hivtrace_cluster_depthwise_traversal (
   nodes,
   edges,
@@ -116,7 +121,7 @@ function _extract_single_cluster(nodes, filter, no_clone, given_json, include_ex
 		return (
 			given_json.Nodes[e.source].id in map_to_id &&
 			given_json.Nodes[e.target].id in map_to_id && (
-			include_extra_edges || !self.is_edge_injected (e))
+			include_extra_edges || !is_edge_injected (e))
 		);
 	});
 

@@ -1,6 +1,7 @@
 var hivtrace_cluster_depthwise_traversal = require("./compute-cluster.js").hivtrace_cluster_depthwise_traversal;
 var _compute_cluster_degrees = require("./compute-cluster.js")._compute_cluster_degrees;
 var _extract_single_cluster = require("./compute-cluster.js")._extract_single_cluster;
+
 var helpers = require("./helpers.js");
 
 var d3 = require("d3");
@@ -13,7 +14,6 @@ var _defaultDateFormats = [
   d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"),
   d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ")
 ];
-
 
 function _n_months_ago(reference_date, months) {
 
@@ -276,7 +276,7 @@ let annotate_priority_clusters = function(
 
       subclusters = _.map(subclusters, function(c, i) {
 
-        var label = clusters[array_index].cluster_id + "-" + (i + 1);
+        var label = array_index + "-" + (i + 1);
 
         _.each(c, function(n) {
           n.subcluster = label;
