@@ -1,3 +1,8 @@
+var hivtrace_cluster_depthwise_traversal = require("./compute-cluster.js").hivtrace_cluster_depthwise_traversal;
+var _compute_cluster_degrees = require("./compute-cluster.js")._compute_cluster_degrees;
+var _extract_single_cluster = require("./compute-cluster.js")._extract_single_cluster;
+var helpers = require("./helpers.js");
+
 var d3 = require("d3");
 var _ = require("underscore");
 
@@ -230,21 +235,19 @@ let annotate_priority_clusters = function(
 
       /** extract subclusters; all nodes at given threshold */
       /** Sub-Cluster: all nodes connected at 0.005 subs/site; there can be multiple sub-clusters per cluster */
-
       cluster_mapping = {};
 
-      clusters.forEach(function(d, i) {
-        cluster_mapping[d.cluster_id] = i;
+      _.each(clusters, (d, i) => {
+        clusters[i] = { nodes : d, priority_score : 0}
       });
 
-      var array_index = cluster_mapping[cluster_index];
-
-      clusters[array_index].priority_score = 0;
+ 			let array_index = cluster_index;
 
       /** all clusters with more than one member connected at 'threshold' edge length */
       var edges = [];
 
       var subclusters = _.filter(
+
         hivtrace_cluster_depthwise_traversal(
           cluster_nodes.Nodes,
           cluster_nodes.Edges,
@@ -254,6 +257,7 @@ let annotate_priority_clusters = function(
         function(cc) {
           return cc.length > 1;
         }
+
       );
 
       edges = _.filter(edges, function(es) {
