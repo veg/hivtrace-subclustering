@@ -1,6 +1,6 @@
 {
   "name": "hivtrace-subcluster",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "repository": "git@github.com:veg/hivtrace-subclustering.git",
   "author": "Steven Weaver <sweaver@temple.edu>",
