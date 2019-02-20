@@ -1,12 +1,12 @@
 {
-  "name": "hivtrace-subclustering",
+  "name": "hivtrace-subcluster",
   "version": "0.1.0",
   "main": "index.js",
   "repository": "git@github.com:veg/hivtrace-subclustering.git",
   "author": "Steven Weaver <sweaver@temple.edu>",
   "license": "MIT",
   "bin": {
-    "subcluster": "./src/cli/subcluster.js"
+    "hivtrace-subcluster": "./src/cli/subcluster.js"
   },
   "files": [
     "src/"
@@ -16,7 +16,6 @@
     "d3": "3",
     "d3-time-format": "^2.1.3",
     "global": "^4.3.2",
-    "hivtrace-subclustering": "./",
     "underscore": "^1.9.1",
     "winston": "^3.2.1"
   }
