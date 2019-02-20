@@ -246,10 +246,15 @@ let annotate_priority_clusters = function(
       });
 
       subclusters = _.map(subclusters, function(c, i) {
-        var label = array_index + "-" + (i + 1);
+
+        let parent_cluster_id = array_index;
+        let subcluster_id = i+1;
+        var label = parent_cluster_id + "-" + subcluster_id;
 
         _.each(c, function(n) {
-          n.subcluster = label;
+          n.subcluster_label = label;
+          n.parent_cluster_id = parent_cluster_id;
+          n.subcluster_id = subcluster_id;
           n.priority_flag = 0;
           n.in_rr = 0;
         });
