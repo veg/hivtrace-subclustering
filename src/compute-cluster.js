@@ -3,19 +3,18 @@ var d3 = require("d3");
 
 var helpers = require("./helpers.js");
 
-function is_edge_injected (e) {
+function is_edge_injected(e) {
   //console.log (e, "edge_type" in e);
   return "edge_type" in e;
 }
 
-function hivtrace_cluster_depthwise_traversal (
+function hivtrace_cluster_depthwise_traversal(
   nodes,
   edges,
   edge_filter,
   save_edges,
   seed_nodes
 ) {
-
   var clusters = [],
     adjacency = {},
     by_node = {};
@@ -75,19 +74,24 @@ function hivtrace_cluster_depthwise_traversal (
   });
 
   return clusters;
-
-};
-
-function _compute_cluster_degrees(d) {
-	var degrees = d.children.map(function(c) {
-		return c.degree;
-	});
-	degrees.sort(d3.ascending);
-	d.degrees = helpers.describe_vector(degrees);
 }
 
-function _extract_single_cluster(nodes, filter, no_clone, given_json, include_extra_edges) {
-	/**
+function _compute_cluster_degrees(d) {
+  var degrees = d.children.map(function(c) {
+    return c.degree;
+  });
+  degrees.sort(d3.ascending);
+  d.degrees = helpers.describe_vector(degrees);
+}
+
+function _extract_single_cluster(
+  nodes,
+  filter,
+  no_clone,
+  given_json,
+  include_extra_edges
+) {
+  /**
 			Extract the nodes and edges between them into a separate objects
 			@param nodes [array]  the list of nodes to extract
 			@param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
@@ -97,49 +101,46 @@ function _extract_single_cluster(nodes, filter, no_clone, given_json, include_ex
 
 	*/
 
-	var cluster_json = {};
-	var map_to_id = {};
+  var cluster_json = {};
+  var map_to_id = {};
 
-	cluster_json.Nodes = _.map(nodes, function(c, i) {
-		map_to_id[c.id] = i;
-		if (no_clone) {
-			return c;
-		}
-		var cc = _.clone(c);
-		cc.cluster = 1;
-		return cc;
-	});
+  cluster_json.Nodes = _.map(nodes, function(c, i) {
+    map_to_id[c.id] = i;
+    if (no_clone) {
+      return c;
+    }
+    var cc = _.clone(c);
+    cc.cluster = 1;
+    return cc;
+  });
 
-	given_json = given_json || json;
+  given_json = given_json || json;
 
-	cluster_json.Edges = _.filter(given_json.Edges, function(e) {
+  cluster_json.Edges = _.filter(given_json.Edges, function(e) {
+    if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
+      return false;
+    }
 
-		if(_.isUndefined(e.source) || _.isUndefined(e.target)) {
-			return false;
-		}
+    return (
+      given_json.Nodes[e.source].id in map_to_id &&
+      given_json.Nodes[e.target].id in map_to_id &&
+      (include_extra_edges || !is_edge_injected(e))
+    );
+  });
 
-		return (
-			given_json.Nodes[e.source].id in map_to_id &&
-			given_json.Nodes[e.target].id in map_to_id && (
-			include_extra_edges || !is_edge_injected (e))
-		);
-	});
+  if (filter) {
+    cluster_json.Edges = _.filter(cluster_json.Edges, filter);
+  }
 
-	if (filter) {
-		cluster_json.Edges = _.filter(cluster_json.Edges, filter);
-	}
+  cluster_json.Edges = _.map(cluster_json.Edges, function(e) {
+    var ne = _.clone(e);
+    ne.source = map_to_id[given_json.Nodes[e.source].id];
+    ne.target = map_to_id[given_json.Nodes[e.target].id];
+    return ne;
+  });
 
-	cluster_json.Edges = _.map(cluster_json.Edges, function(e) {
-		var ne = _.clone(e);
-		ne.source = map_to_id[given_json.Nodes[e.source].id];
-		ne.target = map_to_id[given_json.Nodes[e.target].id];
-		return ne;
-	});
-
-	return cluster_json;
+  return cluster_json;
 }
-
-
 
 exports.hivtrace_cluster_depthwise_traversal = hivtrace_cluster_depthwise_traversal;
 exports._compute_cluster_degrees = _compute_cluster_degrees;

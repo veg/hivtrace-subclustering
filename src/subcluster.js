@@ -1,6 +1,9 @@
-var hivtrace_cluster_depthwise_traversal = require("./compute-cluster.js").hivtrace_cluster_depthwise_traversal;
-var _compute_cluster_degrees = require("./compute-cluster.js")._compute_cluster_degrees;
-var _extract_single_cluster = require("./compute-cluster.js")._extract_single_cluster;
+var hivtrace_cluster_depthwise_traversal = require("./compute-cluster.js")
+  .hivtrace_cluster_depthwise_traversal;
+var _compute_cluster_degrees = require("./compute-cluster.js")
+  ._compute_cluster_degrees;
+var _extract_single_cluster = require("./compute-cluster.js")
+  ._extract_single_cluster;
 
 var helpers = require("./helpers.js");
 
@@ -16,7 +19,6 @@ var _defaultDateFormats = [
 ];
 
 function _n_months_ago(reference_date, months) {
-
   var past_date = new Date(reference_date);
   var past_months = past_date.getMonth();
   var diff_year = Math.floor(months / 12);
@@ -32,11 +34,9 @@ function _n_months_ago(reference_date, months) {
 
   //past_date.setTime (past_date.getTime () - months * 30 * 24 * 3600000);
   return past_date;
-
 }
 
 _parse_dates = function(value, lower_bound, upper_bound) {
-
   lower_bound = lower_bound || 1970;
   upper_bound = upper_bound || new Date().getFullYear();
 
@@ -47,37 +47,28 @@ _parse_dates = function(value, lower_bound, upper_bound) {
   var parsed_value = null;
 
   var passed = _.any(_defaultDateFormats, function(f) {
-
     parsed_value = f.parse(value);
     return parsed_value;
-
   });
 
   if (passed) {
-
     if (
-      parsed_value.getFullYear() < lower_bound || 
+      parsed_value.getFullYear() < lower_bound ||
       parsed_value.getFullYear() > upper_bound
     ) {
       throw "Invalid date";
     }
 
     return parsed_value;
-
   }
 
   throw "Invalid date";
-
 };
 
 attribute_node_value_by_id = function(d, id, number) {
-
   try {
-
     if (_networkNodeAttributeID in d && id) {
-
       if (id in d[_networkNodeAttributeID]) {
-
         var v = d[_networkNodeAttributeID][id];
 
         if (_.isString(v)) {
@@ -98,8 +89,7 @@ attribute_node_value_by_id = function(d, id, number) {
   }
 
   return _networkMissing;
-
-}
+};
 
 let annotate_priority_clusters = function(
   json,
@@ -109,30 +99,25 @@ let annotate_priority_clusters = function(
   recent_months,
   start_date
 ) {
-
   let today = new Date();
   let nodes = json.Nodes;
   let edges = json.Edges;
   let clusters = _.groupBy(nodes, "cluster");
 
   try {
-
     start_date = start_date || today;
 
     var filter_by_date = function(cutoff, node) {
-
       let node_dx = attribute_node_value_by_id(node, date_field);
 
       if (node_dx instanceof Date) {
         return node_dx >= cutoff && node_dx <= start_date;
       } else {
         try {
-            node_dx = _parse_dates(
-              attribute_node_value_by_id(node, date_field)
-            );
-            if (node_dx instanceof Date) {
-              return node_dx >= cutoff && node_dx <= start_date;
-            }
+          node_dx = _parse_dates(attribute_node_value_by_id(node, date_field));
+          if (node_dx instanceof Date) {
+            return node_dx >= cutoff && node_dx <= start_date;
+          }
         } catch (err) {
           return undefined;
         }
@@ -146,37 +131,30 @@ let annotate_priority_clusters = function(
     var node_iterator;
 
     if (start_date == today) {
-
       node_iterator = nodes;
-
     } else {
-
       let beginning_of_time = new Date();
       beginning_of_time.setYear(1900);
 
       node_iterator = [];
 
       _.each(nodes, function(node) {
+        let filter_result = filter_by_date(beginning_of_time, node);
 
-        let filter_result = filter_by_date (beginning_of_time, node);
-
-        if (_.isUndefined (filter_result)) {
+        if (_.isUndefined(filter_result)) {
           node.priority_flag = 6;
         } else {
-            if (filter_result) {
-              node.priority_flag = 5;
-              node_iterator.push(node);
-            } else {
-              node.priority_flag = 4;
-            }
+          if (filter_result) {
+            node.priority_flag = 5;
+            node_iterator.push(node);
+          } else {
+            node.priority_flag = 4;
+          }
         }
-
       });
-
     }
 
     var oldest_nodes_first = function(n1, n2) {
-
       // consistent node sorting, older nodes first
       var node1_dx = attribute_node_value_by_id(n1, date_field);
       var node2_dx = attribute_node_value_by_id(n2, date_field);
@@ -188,7 +166,6 @@ let annotate_priority_clusters = function(
       }
 
       return 0;
-
     };
 
     // extract all clusters at once to avoid inefficiencies of multiple edge-set traverals
@@ -210,7 +187,6 @@ let annotate_priority_clusters = function(
 
     _.each(edges, function(edge) {
       if (edge.length <= subcluster_threshold) {
-
         var edge_cluster = json.Nodes[edge.source].cluster;
 
         var source_id = json.Nodes[edge.source].id,
@@ -220,34 +196,30 @@ let annotate_priority_clusters = function(
           source_id in node_id_to_local_cluster &&
           target_id in node_id_to_local_cluster
         ) {
-
           var copied_edge = _.clone(edge);
           copied_edge.source = node_id_to_local_cluster[source_id];
           copied_edge.target = node_id_to_local_cluster[target_id];
 
           split_clusters[edge_cluster]["Edges"].push(copied_edge);
-
         }
       }
     });
 
     _.each(split_clusters, function(cluster_nodes, cluster_index) {
-
       /** extract subclusters; all nodes at given threshold */
       /** Sub-Cluster: all nodes connected at 0.005 subs/site; there can be multiple sub-clusters per cluster */
       cluster_mapping = {};
 
       _.each(clusters, (d, i) => {
-        clusters[i] = { nodes : d, priority_score : 0}
+        clusters[i] = { nodes: d, priority_score: 0 };
       });
 
- 			let array_index = cluster_index;
+      let array_index = cluster_index;
 
       /** all clusters with more than one member connected at 'threshold' edge length */
       var edges = [];
 
       var subclusters = _.filter(
-
         hivtrace_cluster_depthwise_traversal(
           cluster_nodes.Nodes,
           cluster_nodes.Edges,
@@ -257,7 +229,6 @@ let annotate_priority_clusters = function(
         function(cc) {
           return cc.length > 1;
         }
-
       );
 
       edges = _.filter(edges, function(es) {
@@ -275,7 +246,6 @@ let annotate_priority_clusters = function(
       });
 
       subclusters = _.map(subclusters, function(c, i) {
-
         var label = array_index + "-" + (i + 1);
 
         _.each(c, function(n) {
@@ -368,17 +338,13 @@ let annotate_priority_clusters = function(
         });
 
         clusters[array_index].priority_score = sub.priority_score;
-
       });
-
     });
-
   } catch (err) {
     console.log(err);
   }
 
-	return json;
-
+  return json;
 };
 
 exports.annotate_priority_clusters = annotate_priority_clusters;

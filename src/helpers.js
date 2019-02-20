@@ -1,7 +1,6 @@
 var d3 = require("d3");
 
 function describe_vector(vector, as_list) {
-
   var d = {};
 
   if (vector.length) {
@@ -55,7 +54,6 @@ function describe_vector(vector, as_list) {
   }
 
   return d;
-
 }
 
 exports.describe_vector = describe_vector;
