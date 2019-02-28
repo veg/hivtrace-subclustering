@@ -66,6 +66,10 @@ _parse_dates = function(value, lower_bound, upper_bound) {
 };
 
 attribute_node_value_by_id = function(d, id, number) {
+  if(!_.isObject(d)) {
+    return _networkMissing;
+  }
+
   try {
     if (_networkNodeAttributeID in d && id) {
       if (id in d[_networkNodeAttributeID]) {
@@ -91,7 +95,7 @@ attribute_node_value_by_id = function(d, id, number) {
   return _networkMissing;
 };
 
-function filter_by_date(cutoff, start_date, date_field, node) {
+function filter_by_date(cutoff, node, date_field, start_date) {
 
   let node_dx = attribute_node_value_by_id(node, date_field);
 
@@ -113,7 +117,7 @@ function filter_by_date(cutoff, start_date, date_field, node) {
 };
 
 
-function get_subcluster_summary_stats(subclusters, date_field, start_date) {
+function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, start_date, cluster_nodes) {
 
   var subcluster_summary_stats = {};
 
@@ -126,11 +130,11 @@ function get_subcluster_summary_stats(subclusters, date_field, start_date) {
           per subclusters; for now we will add up all the cases for prioritization, and
           display the largest R&R cluster if there is more than one
       */
-  console.log(subclusters);
   _.each(subclusters, function(sub) {
 
     // extract nodes based on dates
     var subcluster_json = _extract_single_cluster(
+
       _.filter(sub.children, _.partial(filter_by_date, cutoff_long, date_field, start_date)),
       null,
       true,
@@ -190,13 +194,10 @@ function get_subcluster_summary_stats(subclusters, date_field, start_date) {
 
     });
 
-    clusters[array_index].priority_score = sub.priority_score;
-    clusters[array_index].recent_nodes = sub.recent_nodes;
-
-    subcluster_summary_stats[array_index] = subcluster_summary_stats[array_index] || {};
+    subcluster_summary_stats[sub.parent_cluster_id] = subcluster_summary_stats[sub.parent_cluster_id] || {};
 
     // Create subcluster summary statistics field for json
-    subcluster_summary_stats[array_index][sub.subcluster_id] = { priority_score : sub.priority_score, recent_nodes: sub.recent_nodes } 
+    subcluster_summary_stats[sub.parent_cluster_id][sub.subcluster_id] = { priority_score : sub.priority_score, recent_nodes: sub.recent_nodes }; 
 
   });
 
@@ -213,11 +214,11 @@ let annotate_priority_clusters = function(
   start_date
 ) {
 
-
   let today = new Date();
   let nodes = json.Nodes;
   let edges = json.Edges;
   let clusters = _.groupBy(nodes, "cluster");
+  json.subcluster_summary_stats = {};
 
   try {
 
@@ -376,14 +377,15 @@ let annotate_priority_clusters = function(
         };
       });
 
+
       _.each(subclusters, function(c) {
         _compute_cluster_degrees(c);
       });
 
       clusters[array_index].subclusters = subclusters;
 
-      console.log(subclusters);
-      let ss = get_subcluster_summary_stats(subclusters, date_field, start_date);
+      let ss = get_subcluster_summary_stats(subclusters, cutoff_long, date_field, start_date, cluster_nodes);
+      json.subcluster_summary_stats = _.extend(json.subcluster_summary_stats, ss);
 
     });
 
