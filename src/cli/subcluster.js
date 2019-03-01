@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
 var fs = require("fs");
+
 var commander = require("commander");
 var winston = require("winston");
+var moment = require("moment");
+var _ = require("underscore");
 
 var subcluster = require("../subcluster");
 var _networkCDCDateField = "hiv_aids_dx_dt";
@@ -14,10 +17,29 @@ commander
     "-o --output <output>",
     "Output HIV-TRACE results file with subclusters"
   )
+  .option(
+    "-d --startdate [date]",
+    "start date - formatted as YYYYMMDD"
+  )
   .parse(process.argv);
 
 fs.readFile(commander.input, (err, data) => {
+
   let shiv_results = JSON.parse(data);
+
+  let start_date = today;
+  
+  if(!_.isEmpty(commander.startdate)) {
+
+    let parsed = moment(commander.startdate, 'YYYYMMDD', true);
+
+    if(parsed !== "Invalid Date") {
+      start_date = parsed.toDate();
+    } else {
+      throw parsed;
+    }
+
+  }
 
   let new_json = subcluster.annotate_priority_clusters(
     shiv_results.trace_results,
@@ -25,7 +47,7 @@ fs.readFile(commander.input, (err, data) => {
     _networkCDCDateField,
     36,
     12,
-    today
+    start_date
   );
 
   // Write out new json with subclusters
@@ -34,4 +56,5 @@ fs.readFile(commander.input, (err, data) => {
       "Subcluster inference completed. Please proceed with further downstream analysis."
     );
   });
+
 });

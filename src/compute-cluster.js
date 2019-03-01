@@ -15,6 +15,7 @@ function hivtrace_cluster_depthwise_traversal(
   save_edges,
   seed_nodes
 ) {
+
   var clusters = [],
     adjacency = {},
     by_node = {};
@@ -46,6 +47,7 @@ function hivtrace_cluster_depthwise_traversal(
   });
 
   var traverse = function(node) {
+
     if (!(node.id in by_node)) {
       clusters.push([node]);
       by_node[node.id] = clusters.length - 1;
@@ -53,6 +55,7 @@ function hivtrace_cluster_depthwise_traversal(
         save_edges.push([]);
       }
     }
+
     node.visited = true;
 
     _.each(adjacency[node.id], function(neighbor) {
@@ -65,6 +68,7 @@ function hivtrace_cluster_depthwise_traversal(
         traverse(neighbor[0]);
       }
     });
+
   };
 
   _.each(seed_nodes, function(n) {
@@ -74,6 +78,7 @@ function hivtrace_cluster_depthwise_traversal(
   });
 
   return clusters;
+
 }
 
 function _compute_cluster_degrees(d) {
@@ -91,14 +96,13 @@ function _extract_single_cluster(
   given_json,
   include_extra_edges
 ) {
+
   /**
-			Extract the nodes and edges between them into a separate objects
-			@param nodes [array]  the list of nodes to extract
-			@param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
-			@param no_clone [bool] if set to T, node objects are not shallow cloned in the return object
-
-			@return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
-
+    Extract the nodes and edges between them into a separate objects
+    @param nodes [array]  the list of nodes to extract
+    @param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
+    @param no_clone [bool] if set to T, node objects are not shallow cloned in the return object
+    @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
 	*/
 
   var cluster_json = {};

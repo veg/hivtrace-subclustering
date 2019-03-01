@@ -132,9 +132,11 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, star
       */
   _.each(subclusters, function(sub) {
 
+    console.log(sub.children) 
+    console.log(_.filter(sub.children, _.partial(filter_by_date, cutoff_long, date_field, start_date)))
+
     // extract nodes based on dates
     var subcluster_json = _extract_single_cluster(
-
       _.filter(sub.children, _.partial(filter_by_date, cutoff_long, date_field, start_date)),
       null,
       true,
@@ -200,6 +202,8 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, star
     subcluster_summary_stats[sub.parent_cluster_id][sub.subcluster_id] = { priority_score : sub.priority_score, recent_nodes: sub.recent_nodes }; 
 
   });
+
+  console.log(subcluster_summary_stats);
 
   return subcluster_summary_stats;
 
