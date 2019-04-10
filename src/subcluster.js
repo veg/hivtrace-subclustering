@@ -18,6 +18,9 @@ var _defaultDateFormats = [
   d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ")
 ];
 
+var subcluster_threshold = 0.005;
+
+
 function _n_months_ago(reference_date, months) {
   var past_date = new Date(reference_date);
   var past_months = past_date.getMonth();
@@ -37,6 +40,7 @@ function _n_months_ago(reference_date, months) {
 }
 
 _parse_dates = function(value, lower_bound, upper_bound) {
+
   lower_bound = lower_bound || 1970;
   upper_bound = upper_bound || new Date().getFullYear();
 
@@ -60,6 +64,7 @@ _parse_dates = function(value, lower_bound, upper_bound) {
     }
 
     return parsed_value;
+
   }
 
   throw "Invalid date";
@@ -93,6 +98,7 @@ attribute_node_value_by_id = function(d, id, number) {
   }
 
   return _networkMissing;
+
 };
 
 function filter_by_date(cutoff, node, date_field, start_date) {
@@ -104,6 +110,7 @@ function filter_by_date(cutoff, node, date_field, start_date) {
   } else {
     try {
       node_dx = _parse_dates(attribute_node_value_by_id(node, date_field));
+
       if (node_dx instanceof Date) {
         return node_dx >= cutoff && node_dx <= start_date;
       }
@@ -117,7 +124,7 @@ function filter_by_date(cutoff, node, date_field, start_date) {
 };
 
 
-function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, start_date, cluster_nodes) {
+function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes) {
 
   var subcluster_summary_stats = {};
 
@@ -132,12 +139,9 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, star
       */
   _.each(subclusters, function(sub) {
 
-    console.log(sub.children) 
-    console.log(_.filter(sub.children, _.partial(filter_by_date, cutoff_long, date_field, start_date)))
-
     // extract nodes based on dates
     var subcluster_json = _extract_single_cluster(
-      _.filter(sub.children, _.partial(filter_by_date, cutoff_long, date_field, start_date)),
+      _.filter(sub.children, d => { return filter_by_date(cutoff_long, d, date_field, start_date) }),
       null,
       true,
       cluster_nodes
@@ -168,16 +172,15 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, star
 
       var priority_nodes = _.groupBy(
         recent_cluster,
-        _.partial(filter_by_date, cutoff_short)
+        d => { return filter_by_date(cutoff_short, d, date_field, start_date)}
       );
 
       sub.recent_nodes.push(recent_cluster.length);
 
       if (true in priority_nodes) {
-
         sub.priority_score.push(priority_nodes[true].length);
         _.each(priority_nodes[true], function(n) {
-          n.priority_flag = filter_by_date(start_date, n) ? 4 : 1;
+          n.priority_flag = filter_by_date(cutoff_short, n, date_field, start_date) ? 4 : 1;
           if (priority_nodes[true].length >= 3) {
             n.in_rr = true;
             if (n.priority_flag == 1) {
@@ -185,7 +188,6 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, star
             }
           }
         });
-
       }
 
       if (false in priority_nodes) {
@@ -202,8 +204,6 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, date_field, star
     subcluster_summary_stats[sub.parent_cluster_id][sub.subcluster_id] = { priority_score : sub.priority_score, recent_nodes: sub.recent_nodes }; 
 
   });
-
-  console.log(subcluster_summary_stats);
 
   return subcluster_summary_stats;
 
@@ -388,7 +388,7 @@ let annotate_priority_clusters = function(
 
       clusters[array_index].subclusters = subclusters;
 
-      let ss = get_subcluster_summary_stats(subclusters, cutoff_long, date_field, start_date, cluster_nodes);
+      let ss = get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes);
       json.subcluster_summary_stats = _.extend(json.subcluster_summary_stats, ss);
 
     });

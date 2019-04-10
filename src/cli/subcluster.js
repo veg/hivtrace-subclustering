@@ -26,7 +26,6 @@ commander
 fs.readFile(commander.input, (err, data) => {
 
   let shiv_results = JSON.parse(data);
-
   let start_date = today;
   
   if(!_.isEmpty(commander.startdate)) {

@@ -105,17 +105,21 @@ function _extract_single_cluster(
     @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
 	*/
 
+
   var cluster_json = {};
   var map_to_id = {};
 
   cluster_json.Nodes = _.map(nodes, function(c, i) {
+
     map_to_id[c.id] = i;
     if (no_clone) {
       return c;
     }
+
     var cc = _.clone(c);
     cc.cluster = 1;
     return cc;
+
   });
 
   given_json = given_json || json;
@@ -130,6 +134,7 @@ function _extract_single_cluster(
       given_json.Nodes[e.target].id in map_to_id &&
       (include_extra_edges || !is_edge_injected(e))
     );
+
   });
 
   if (filter) {
