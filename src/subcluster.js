@@ -108,15 +108,19 @@ function filter_by_date(cutoff, node, date_field, start_date) {
   if (node_dx instanceof Date) {
     return node_dx >= cutoff && node_dx <= start_date;
   } else {
+
     try {
+
       node_dx = _parse_dates(attribute_node_value_by_id(node, date_field));
 
       if (node_dx instanceof Date) {
         return node_dx >= cutoff && node_dx <= start_date;
       }
+
     } catch (err) {
       return undefined;
     }
+
   }
 
   return false;
@@ -222,6 +226,7 @@ let annotate_priority_clusters = function(
   let nodes = json.Nodes;
   let edges = json.Edges;
   let clusters = _.groupBy(nodes, "cluster");
+
   json.subcluster_summary_stats = {};
 
   try {
