@@ -20,7 +20,6 @@ var _defaultDateFormats = [
 
 var subcluster_threshold = 0.005;
 
-
 function _n_months_ago(reference_date, months) {
   var past_date = new Date(reference_date);
   var past_months = past_date.getMonth();
@@ -127,7 +126,6 @@ function filter_by_date(cutoff, node, date_field, start_date) {
 
 };
 
-
 function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes) {
 
   var subcluster_summary_stats = {};
@@ -176,10 +174,11 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, da
 
       var priority_nodes = _.groupBy(
         recent_cluster,
-        d => { return filter_by_date(cutoff_short, d, date_field, start_date)}
+        d => { return filter_by_date(cutoff_short, d, date_field, start_date); }
       );
 
       sub.recent_nodes.push(recent_cluster.length);
+
 
       if (true in priority_nodes) {
         sub.priority_score.push(priority_nodes[true].length);
@@ -385,7 +384,6 @@ let annotate_priority_clusters = function(
           )
         };
       });
-
 
       _.each(subclusters, function(c) {
         _compute_cluster_degrees(c);
