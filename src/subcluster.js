@@ -186,8 +186,6 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, da
         _.each(priority_nodes[true], function(n) {
 
           n.priority_flag = filter_by_date(start_date, n, date_field, today) ? 4 : 1;
-          console.log(cutoff_short, date_field, start_date);
-          console.log(n.priority_flag);
           if (priority_nodes[true].length >= 3) {
             n.in_rr = true;
             if (n.priority_flag === 1) {
