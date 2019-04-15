@@ -129,6 +129,7 @@ function filter_by_date(cutoff, node, date_field, start_date) {
 function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes) {
 
   var subcluster_summary_stats = {};
+  let today = new Date();
 
   /** now, for each subcluster, extract the recent and rapid part */
 
@@ -183,10 +184,13 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, da
       if (true in priority_nodes) {
         sub.priority_score.push(priority_nodes[true].length);
         _.each(priority_nodes[true], function(n) {
-          n.priority_flag = filter_by_date(cutoff_short, n, date_field, start_date) ? 4 : 1;
+
+          n.priority_flag = filter_by_date(start_date, n, date_field, today) ? 4 : 1;
+          console.log(cutoff_short, date_field, start_date);
+          console.log(n.priority_flag);
           if (priority_nodes[true].length >= 3) {
             n.in_rr = true;
-            if (n.priority_flag == 1) {
+            if (n.priority_flag === 1) {
               n.priority_flag = 2;
             }
           }
