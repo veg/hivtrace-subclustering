@@ -21,6 +21,7 @@ var _defaultDateFormats = [
 var subcluster_threshold = 0.005;
 
 function _n_months_ago(reference_date, months) {
+
   var past_date = new Date(reference_date);
   var past_months = past_date.getMonth();
   var diff_year = Math.floor(months / 12);
@@ -70,6 +71,7 @@ _parse_dates = function(value, lower_bound, upper_bound) {
 };
 
 attribute_node_value_by_id = function(d, id, number) {
+
   if(!_.isObject(d)) {
     return _networkMissing;
   }
@@ -126,6 +128,102 @@ function filter_by_date(cutoff, node, date_field, start_date) {
 
 };
 
+function get_all_subclusters(json) {
+
+  // Group nodes by cluster then by subcluster
+  let clusters = _.groupBy(json.Nodes, d => d.cluster );
+  let subclusters = _.mapObject(clusters, (c) => { 
+    return _.omit(_.groupBy(c, d => d.subcluster_id), undefined)
+  });
+
+  return subclusters;
+  
+}
+
+function get_single_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes) {
+
+  var subcluster_summary_stats = {};
+  let today = new Date();
+
+  /** now, for each subcluster, extract the recent and rapid part */
+
+  /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx’d in the previous 36 months
+          and at least two cases dx’d in the previous 12 months; there is a path between all nodes in an R&R Cluster
+
+          20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters
+          per subclusters; for now we will add up all the cases for prioritization, and
+          display the largest R&R cluster if there is more than one
+      */
+  _.each(subclusters, function(sub) {
+
+
+    // extract nodes based on dates
+    var subcluster_json = cluster_nodes;  
+
+    var rr_cluster = _.filter(
+      hivtrace_cluster_depthwise_traversal(
+        subcluster_json.Nodes,
+        _.filter(subcluster_json.Edges, function(e) {
+          return e.length <= subcluster_threshold;
+        })
+      ),
+      function(cc) {
+        return cc.length > 1;
+      }
+    );
+
+    sub.rr_count = rr_cluster.length;
+
+    rr_cluster.sort(function(a, b) {
+      return b.length - a.length;
+    });
+
+    sub.priority_score = [];
+    sub.recent_nodes = [];
+
+    _.each(rr_cluster, function(recent_cluster) {
+
+      var priority_nodes = _.groupBy(
+        recent_cluster,
+        d => { return filter_by_date(cutoff_short, d, date_field, start_date); }
+      );
+
+      sub.recent_nodes.push(recent_cluster.length);
+
+
+      if (true in priority_nodes) {
+        sub.priority_score.push(priority_nodes[true].length);
+        _.each(priority_nodes[true], function(n) {
+
+          n.priority_flag = filter_by_date(start_date, n, date_field, today) ? 4 : 1;
+          if (priority_nodes[true].length >= 3) {
+            n.in_rr = true;
+            if (n.priority_flag === 1) {
+              n.priority_flag = 2;
+            }
+          }
+        });
+      }
+
+      if (false in priority_nodes) {
+        _.each(priority_nodes[false], function(n) {
+          n.priority_flag = 3;
+        });
+      }
+
+    });
+
+    subcluster_summary_stats[sub.parent_cluster_id] = subcluster_summary_stats[sub.parent_cluster_id] || {};
+
+    // Create subcluster summary statistics field for json
+    subcluster_summary_stats[sub.parent_cluster_id][sub.subcluster_id] = { priority_score : sub.priority_score, recent_nodes: sub.recent_nodes }; 
+
+  });
+
+  return subcluster_summary_stats;
+
+}
+
 function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes) {
 
   var subcluster_summary_stats = {};
@@ -141,6 +239,7 @@ function get_subcluster_summary_stats(subclusters, cutoff_long, cutoff_short, da
           display the largest R&R cluster if there is more than one
       */
   _.each(subclusters, function(sub) {
+
 
     // extract nodes based on dates
     var subcluster_json = _extract_single_cluster(
@@ -406,6 +505,49 @@ let annotate_priority_clusters = function(
 
 };
 
+function get_edges_in_subcluster(subcluster_nodes, json) {
+  let node_ids = _.map(subcluster_nodes, d=> d.id);
+  return _.filter(json.Edges, e => { return _.intersection(e.sequences, node_ids).length == 2});
+}
+
+function get_total_subcluster_summary_stats(json, cutoff_long, cutoff_short, date_field, start_date, cluster_nodes) {
+
+  // Get all subclusters from nodes
+  let subclusters = get_all_subclusters(json);
+
+  //console.log(subclusters);
+  // flatten subclusters to giant array
+
+  let t = _.map(subclusters, (cluster, c_id) => {
+   return _.map(cluster, (sub, s_id) => {
+      return {
+        children: _.clone(sub),
+        Nodes : _.clone(sub),
+        //parent_cluster: clusters[array_index],
+        cluster_id: c_id,
+        subcluster_id: s_id,
+        Edges : get_edges_in_subcluster(sub, json),
+        parent_cluster_id : c_id
+      };
+   })
+  })
+
+  let total_ss = {};
+  let summ_stats = _.partial(get_single_subcluster_summary_stats, _, cutoff_long, cutoff_short, date_field, start_date, _);
+
+  _.each(t, d => {
+    if(d.length) {
+      let nodes = {Nodes : d[0].children, Edges : d[0].Edges};
+      _.extend(total_ss, summ_stats(d, nodes));
+    }
+  });
+
+  return total_ss;
+
+}
+
 exports.annotate_priority_clusters = annotate_priority_clusters;
 exports.subcluster_summary_stats = get_subcluster_summary_stats;
+exports.total_summary_stats = get_total_subcluster_summary_stats;
+exports.get_subclusters = get_all_subclusters;
 

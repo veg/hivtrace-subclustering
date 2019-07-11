@@ -42,3 +42,74 @@ tape("subcluster", function(test) {
 
 });
 
+tape("get subclusters", function(test) {
+
+  let correct = JSON.parse(String(fs.readFileSync(__dirname + "/data/correct.json")));
+  let dummy_data = __dirname + "/data/DummyNetworkAttributes.json";
+
+  var _networkCDCDateField = "hiv_aids_dx_dt";
+  var today = new Date();
+
+
+  fs.readFile(dummy_data, (err, data) => {
+
+    let shiv_results = JSON.parse(data);
+    let start_date = today;
+    
+    let new_json = subcluster.annotate_priority_clusters(
+      shiv_results.trace_results,
+      0.005,
+      _networkCDCDateField,
+      36,
+      12,
+      start_date
+    );
+
+    let subclusters = subcluster.get_subclusters(new_json);
+    test.ok(_.keys(subclusters).length == 124);
+    test.end();
+
+    
+  });
+
+
+});
+
+
+
+tape.only("get total summary stats", function(test) {
+
+  let correct = JSON.parse(String(fs.readFileSync(__dirname + "/data/correct.json")));
+  let dummy_data = __dirname + "/data/DummyNetworkAttributes.json";
+
+  var _networkCDCDateField = "hiv_aids_dx_dt";
+  var today = new Date();
+
+
+  fs.readFile(dummy_data, (err, data) => {
+
+    let shiv_results = JSON.parse(data);
+    let start_date = today;
+    
+    let new_json = subcluster.annotate_priority_clusters(
+      shiv_results.trace_results,
+      0.005,
+      _networkCDCDateField,
+      36,
+      12,
+      start_date
+    );
+
+    let total_stats = subcluster.total_summary_stats(new_json, 0.005, _networkCDCDateField, 36, 12, start_date);
+
+    //console.log(total_stats);
+    //console.log(total_stats[121][1].recent_nodes);
+    test.equal(new_json.subcluster_summary_stats[121][1].recent_nodes, total_stats[121][1].recent_nodes);
+    test.end();
+
+    
+  });
+
+
+});
+
